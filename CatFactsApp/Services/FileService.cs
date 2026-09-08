@@ -1,4 +1,6 @@
-﻿namespace CatFactsApp.Services;
+﻿using CatFactsApp.Services.Interfaces;
+
+namespace CatFactsApp.Services;
 
 public class FileService : IFileService
 {

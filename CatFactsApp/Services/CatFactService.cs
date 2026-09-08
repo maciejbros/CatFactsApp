@@ -1,4 +1,5 @@
 ﻿using CatFactsApp.Models;
+using CatFactsApp.Services.Interfaces;
 using System.Net.Http.Json;
 
 namespace CatFactsApp.Services
