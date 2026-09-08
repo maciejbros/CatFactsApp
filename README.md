@@ -1,45 +1,49 @@
-# Cat Facts
+# Cat Facts App
 
-A simple C# console application that retrieves random cat facts from the [Cat Fact API](https://catfact.ninja/) and stores them locally in a text file.
-
-The project was created as a demonstration of basic .NET development, Dependency Injection, HTTP communication, asynchronous programming, file handling, and clean code organization.
+A .NET 8 console application that retrieves random cat facts from the Cat Fact API and stores them locally in a text file.
 
 ## Features
 
 * Retrieve random cat facts from the Cat Fact API
-* Display the fact and its length in the console
-* Save retrieved facts to a local `.txt` file
-* Store each fact on a separate line
-* View the history of retrieved facts
+* Display the fact and its character length
+* Save every retrieved fact locally
+* View previously saved facts
 * Display statistics based on saved facts
-* Clear the entire history
-* Handle API and application errors
-* Exit the application using the `ESC` key
+* Clear saved history with confirmation
+* Dependency Injection
+* Asynchronous programming with `async`/`await`
+* Error handling
+* Version control with Git
 
 ## Technologies
 
 * C#
 * .NET 8
+* Console Application
 * `HttpClient`
-* `System.Text.Json`
-* Dependency Injection
-* Asynchronous programming with `async/await`
-* File I/O
+* `System.Net.Http.Json`
+* Microsoft.Extensions.DependencyInjection
 * Git / GitHub
 
 ## Project Structure
 
 ```text
-CatFactsApp/
+CatFactsApp
 │
-├── Models/
+├── Models
 │   └── CatFact.cs
 │
-├── Services/
-│   ├── ICatFactService.cs
+├── Services
+│   ├── Interfaces
+│   │   ├── ICatFactService.cs
+│   │   └── IFileService.cs
+│   │
 │   ├── CatFactService.cs
-│   ├── IFileService.cs
 │   └── FileService.cs
+│
+├── UI
+│   ├── ConsoleUI.cs
+│   └── ConsoleConstants.cs
 │
 ├── Program.cs
 ├── README.md
@@ -50,13 +54,47 @@ CatFactsApp/
 
 `CatFact.cs` represents the data returned by the Cat Fact API.
 
+It contains:
+
+* `Fact` - the cat fact text
+* `Length` - the length of the fact
+
 ### Services
 
-`ICatFactService` and `CatFactService` are responsible for communicating with the external API.
+The application logic is separated into dedicated services.
 
-`IFileService` and `FileService` handle storing, reading, and clearing the cat fact history.
+#### `CatFactService`
 
-Dependency Injection is used to provide the required services to the application.
+Responsible for communicating with the Cat Fact API and retrieving cat facts.
+
+#### `FileService`
+
+Responsible for local data storage:
+
+* Appending new facts to the history file
+* Reading saved facts
+* Clearing the history
+
+### Interfaces
+
+The service interfaces are placed in a separate `Services/Interfaces` folder.
+
+* `ICatFactService` defines the contract for retrieving cat facts
+* `IFileService` defines the contract for managing the local history
+
+Using interfaces allows the application to depend on abstractions instead of concrete implementations and makes the services easier to replace or test.
+
+### UI
+
+`ConsoleUI` contains the application's user interface and menu logic.
+
+`ConsoleConstants` contains shared UI text and application constants, keeping hard-coded strings out of the main UI logic.
+
+### Program.cs
+
+`Program.cs` is responsible only for configuring Dependency Injection and starting the application.
+
+The application logic and UI methods are handled by `ConsoleUI`.
 
 ## API
 
@@ -83,84 +121,105 @@ Retrieved facts are stored locally in:
 Documents/catfacts.txt
 ```
 
-The file is created automatically when the first fact is retrieved.
+Each request appends a new line to the file.
 
-Each fact is stored on a separate line using `|` as a separator:
+The stored format is:
 
 ```text
-Baking chocolate is the most dangerous chocolate to your cat. | 61
-Cats sleep for around 13-16 hours a day. | 43
+Fact text | Length
 ```
 
-The `|` separator is used instead of a comma to avoid problems with facts that may contain commas.
+The `|` character is used as the separator and is defined as a constant in `ConsoleConstants`.
 
-## Application Controls
+## Controls
 
-| Key     | Action                  |
-| ------- | ----------------------- |
-| `ENTER` | Retrieve a new cat fact |
-| `H`     | Show history            |
-| `S`     | Show statistics         |
-| `C`     | Clear history           |
-| `ESC`   | Exit the application    |
+| Key     | Action             |
+| ------- | ------------------ |
+| `ENTER` | Get a new cat fact |
+| `H`     | Show history       |
+| `S`     | Show statistics    |
+| `C`     | Clear history      |
+| `ESC`   | Exit               |
 
 ## Statistics
 
-The application can calculate statistics based on the stored facts, including:
+The statistics view displays:
 
-* Total number of facts
+* Total number of saved facts
 * Average fact length
 * Shortest fact
 * Longest fact
 
-Example:
+Statistics are calculated from the locally stored history.
 
-```text
-      STATISTICS
+## Dependency Injection
 
+The application uses Microsoft's built-in Dependency Injection container.
 
-Total facts:       10
-Average length:    74.30
-Shortest fact:     42
-Longest fact:      128
+Services are registered in `Program.cs`:
+
+```csharp
+services.AddHttpClient<ICatFactService, CatFactService>();
+services.AddSingleton<IFileService, FileService>();
+services.AddSingleton<ConsoleUI>();
 ```
+
+`ConsoleUI` receives its dependencies through constructor injection:
+
+```csharp
+public ConsoleUI(
+    ICatFactService catFactService,
+    IFileService fileService)
+{
+    _catFactService = catFactService;
+    _fileService = fileService;
+}
+```
+
+This keeps the classes loosely coupled and makes the application easier to maintain and test.
+
+## Asynchronous Programming
+
+The application uses asynchronous methods for operations that involve I/O, including:
+
+* HTTP requests
+* Reading the history file
+* Writing to the history file
+
+This is implemented using `async`/`await`.
 
 ## Error Handling
 
-The application handles errors that may occur while communicating with the external API or working with the local file.
+API and file operations are handled using exception handling so that unexpected errors do not terminate the application without an explanation.
 
-Errors are displayed in the console without terminating the application unexpectedly.
+Errors are displayed directly in the console.
 
 ## Getting Started
 
-There are two ways to run the application.
+### Option 1 - Download the latest release
 
-### Option 1 — Download the latest release
+The easiest way to run the application is to download the latest release from GitHub.
 
-The easiest way to run the application is to download the latest release from the GitHub Releases page.
+The published Windows executable is self-contained, so the .NET 8 SDK is not required.
 
-1. Open the **Releases** section of the repository.
-2. Download the latest `CatFactsApp.exe`.
+1. Go to the [Releases](https://github.com/maciejbros/CatFactsApp/releases) page.
+2. Download `CatFactsApp.exe`.
 3. Run the executable.
 
-A published self-contained version of the application can be run without installing the .NET 8 SDK.
+### Option 2 - Run from source
 
-> The application requires an internet connection to retrieve cat facts from the API.
-
-### Option 2 — Run from source code
-
-To run the application from source, you need:
+Requirements:
 
 * .NET 8 SDK
-* Visual Studio 2022 or another IDE supporting .NET 8
+* Visual Studio 2022 or another compatible .NET development environment
 
 Clone the repository:
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/maciejbros/CatFactsApp.git
 ```
 
-Navigate to the project directory:
+Navigate to the project:
 
 ```bash
 cd CatFactsApp
@@ -172,42 +231,16 @@ Run the application:
 dotnet run
 ```
 
-Alternatively, open the solution in Visual Studio and run the project using `Ctrl + F5` or `F5`.
-
-## Dependency Injection
-
-The application uses Microsoft's built-in Dependency Injection container.
-
-Services are registered in `Program.cs`:
-
-```csharp
-services.AddHttpClient<ICatFactService, CatFactService>();
-services.AddSingleton<IFileService, FileService>();
-```
-
-This allows the application to depend on abstractions (`ICatFactService` and `IFileService`) instead of concrete implementations.
-
-It also makes the application easier to test, maintain, and extend.
-
-## Asynchronous Programming
-
-The application uses `async/await` for operations that involve I/O, including:
-
-* HTTP requests
-* Reading the history file
-* Writing new facts to the file
-* Clearing the history file
-
-This prevents blocking the application while waiting for external operations to complete.
-
-## Git and Version Control
+## Version Control
 
 The project is managed using Git and hosted on GitHub.
 
-The repository contains the application source code, documentation, and project configuration.
+Repository:
 
-Releases are used to provide ready-to-run versions of the application.
+https://github.com/maciejbros/CatFactsApp
+
+The repository contains the complete source code and project files.
 
 ## License
 
-This project was created for educational and recruitment purposes.
+This project was created as a recruitment task and is intended for demonstration purposes.
